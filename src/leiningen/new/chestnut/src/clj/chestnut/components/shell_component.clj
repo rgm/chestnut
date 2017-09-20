@@ -23,7 +23,7 @@
     (when-let [p (:shell-process this)]
       (println "Shell command: Stopping" (str/join " " command))
       (kill p))
-    (dissoc this :shell-process)))
+    (assoc this :shell-process nil)))
 
 (defn shell-component [& cmd]
   (->ShellComponent cmd))
