@@ -2,13 +2,28 @@
   (:require [com.stuartsierra.component :as component]
             [clojure.string :as str]))
 
+(defn spawn [command]
+  "starts a shell process, returns the java.lang.Process wrapped in a future"
+  (let [builder (ProcessBuilder. command)]
+    (future (.start builder))))
+
+(defn kill [p]
+  "p is a future-wrapped java.lang.Process"
+  (.destroy @p))
+
 (defrecord ShellComponent [command]
   component/Lifecycle
   (start [this]
-    (when-not (:running this)
-      (println "Shell command:" (str/join " " command))
-      (future (apply clojure.java.shell/sh command)))
-    (assoc this :running true)))
+    (if-not (:shell-process this)
+      (do
+        (println "Shell command: Starting" (str/join " " command))
+        (assoc this :shell-process (spawn command)))
+      this))
+  (stop [this]
+    (when-let [p (:shell-process this)]
+      (println "Shell command: Stopping" (str/join " " command))
+      (kill p))
+    (dissoc this :shell-process)))
 
 (defn shell-component [& cmd]
   (->ShellComponent cmd))
